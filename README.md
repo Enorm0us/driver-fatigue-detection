@@ -35,6 +35,10 @@ Epoch 132  val_loss 0.5937  val_acc 0.7528   <- 峰值
 Epoch 200  val_loss 0.5630  val_acc 0.7393
 ```
 
+![疲劳检测 MLP 200 轮训练曲线](docs/training-curve.png)
+
+左图 `val_loss` 一路单调下降，右图 `val_accuracy` 前 64 轮是一条完全水平的直线，第 65 轮才抬起来 —— 这就是下面那段排查的由来。
+
 原因不是数据坏了、也不是网络太浅，而是 **Adam 的默认学习率 1e-3 对这类「只有两个特征、量级在 1e-3」的输入偏大**：梯度更新一步就跨过了最优解所在的窄谷，参数在谷底两侧反复弹跳，loss 几乎不降。
 
 把学习率改成 `Adam(0.0001)` 之后，第 65 个 epoch 左右模型才开始明显收敛，验证准确率一路爬到 75% 附近。这个排查过程说明：**超参数不能无脑用默认值**，尤其是特征维度极低时，学习率的量级要和特征量级匹配。
@@ -103,6 +107,7 @@ Dense(1,  sigmoid)
 5_Predict.ipynb         单图推理
 model/keras_nn/         SavedModel 格式的成品模型
 samples/                open.jpg / closed.jpg 两张样图
+docs/                   200 轮训练曲线图
 ```
 
 > `model/shape_predictor_68_face_landmarks.dat`（约 95 MB）是 dlib 官方模型，**不在仓库里**，需要自己下载后放到 `model/` 下。
